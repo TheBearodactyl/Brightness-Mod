@@ -3,26 +3,34 @@
 
 using namespace geode::prelude;
 
-class Brightness : public FLAlertLayer {
+class Brightness : public CCLayer {
     CCTextInputNode* minInput;
     CCTextInputNode* maxInput;
     CCTextInputNode* randInput;
+    CCLayer* m_mainLayer;
+    CCMenu* m_buttonMenu;
 public:
 	bool init() {
-        if (!initWithColor({ 0, 0, 0, 150 })) return false;
+        if (!CCLayer::init()) return false;
 
+        auto dark_ = CCLayerColor::create({0, 0, 0, 150});
+        this->addChild(dark_);
+        
         this->setID("BrightnessPopup"_spr);
 
-        cocos2d::CCTouchDispatcher::get()->registerForcePrio(this, 2);
+        this->setPreviousPriority(-504);
+        this->setTouchPriority(-504);
 
         this->setKeypadEnabled(true);
         this->setTouchEnabled(true);
+        this->setTouchMode(ccTouchesMode::kCCTouchesOneByOne);
 
         auto size = CCDirector::sharedDirector()->getWinSize();
 
         m_mainLayer = CCLayer::create();
         m_buttonMenu = CCMenu::create();
         m_buttonMenu->setPosition({0,0});
+        m_buttonMenu->setTouchPriority(-506);
 
         auto bg = extension::CCScale9Sprite::create("GJ_square01.png");
         bg->setContentSize({ 320, 280 });
@@ -205,7 +213,7 @@ public:
         this->setTouchEnabled(false);
         this->setKeypadEnabled(false);
 
-        Brightness::onBtn1(nullptr);
+        this->removeMeAndCleanup();
     }
     void onInvert(CCObject*) {
         Mod::get()->setSettingValue<bool>("invert-brightness", !Mod::get()->getSettingValue<bool>("invert-brightness"));
@@ -296,11 +304,13 @@ public:
             }
         }
     }
+    void show() {
+        CCScene::get()->addChild(this, CCScene::get()->getHighestChildZ());
+    }
     static Brightness* create() {
         auto r = new Brightness;
         if (r && r->init()) {
             r->autorelease();
-            r->m_noElasticity = true;
         }
         else CC_SAFE_DELETE(r);
         return r;
